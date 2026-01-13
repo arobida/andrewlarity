@@ -29,12 +29,15 @@ let time = 0;
 // ═══════════════════════════════════════════════════════════════════════
 
 function preload() {
-    try {
-        montserratFont = loadFont('https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.ttf');
-    } catch (e) {
-        console.error('Font loading failed, using default font:', e);
-        montserratFont = 'sans-serif';
-    }
+    montserratFont = loadFont('https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.ttf',
+        () => {
+            console.log('Font loaded successfully');
+        },
+        () => {
+            console.error('Font loading failed, using system font');
+            montserratFont = null;
+        }
+    );
 }
 
 function setup() {
@@ -43,13 +46,17 @@ function setup() {
     
     pg = createGraphics(width, height);
     
-    initializeSystem();
-    
-    document.querySelector('.loading').style.display = 'none';
-    updateSeedDisplay();
+    // Wait a bit for font to load, then initialize
+    setTimeout(() => {
+        initializeSystem();
+        document.querySelector('.loading').style.display = 'none';
+        updateSeedDisplay();
+    }, 100);
 }
 
 function initializeSystem() {
+    if (!pg) return;
+    
     randomSeed(params.seed);
     noiseSeed(params.seed);
 
@@ -73,10 +80,12 @@ function initializeSystem() {
 }
 
 function generateTextData() {
+    if (!pg) return;
+    
     pg.clear();
     pg.background(0);
     pg.fill(255);
-    pg.textFont(montserratFont);
+    pg.textFont(montserratFont || 'sans-serif');
     pg.textSize(180);
     pg.textAlign(CENTER, CENTER);
     pg.text('ANDREW', width / 2, height / 2);
@@ -137,6 +146,8 @@ class MagneticParticle {
     }
 
     applyMagneticForce() {
+        if (!pg) return;
+        
         // Find closest letter center
         let closest = null;
         let minDist = Infinity;
@@ -227,6 +238,14 @@ class TextParticle {
         // Place on text area
         let placed = false;
         let attempts = 0;
+        
+        if (!pg) {
+            // Fallback if pg doesn't exist
+            this.homeX = width / 2;
+            this.homeY = height / 2;
+            placed = true;
+        }
+        
         while (!placed && attempts < 1000) {
             this.homeX = random(width);
             this.homeY = random(height);
