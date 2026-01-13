@@ -29,15 +29,9 @@ let time = 0;
 // ═══════════════════════════════════════════════════════════════════════
 
 function preload() {
-    montserratFont = loadFont('https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.ttf',
-        () => {
-            console.log('Font loaded successfully');
-        },
-        () => {
-            console.error('Font loading failed, using system font');
-            montserratFont = null;
-        }
-    );
+    // Don't fetch remote font files in p5; we already include Montserrat via Google Fonts CSS.
+    // Using CSS avoids 404s and "Unsupported OpenType signature" console noise.
+    montserratFont = null;
 }
 
 function setup() {
