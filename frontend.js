@@ -46,12 +46,10 @@ function setup() {
     
     pg = createGraphics(width, height);
     
-    // Wait a bit for font to load, then initialize
-    setTimeout(() => {
-        initializeSystem();
-        document.querySelector('.loading').style.display = 'none';
-        updateSeedDisplay();
-    }, 100);
+    initializeSystem();
+    
+    document.querySelector('.loading').style.display = 'none';
+    updateSeedDisplay();
 }
 
 function initializeSystem() {
@@ -111,6 +109,11 @@ function generateTextData() {
 function draw() {
     background(0);
     time += params.waveSpeed;
+
+    // Don't try to draw if not initialized
+    if (!particles.length && !textParticles.length) {
+        return;
+    }
 
     // Update and draw background particles
     for (let p of particles) {
