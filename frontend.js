@@ -28,11 +28,16 @@ let time = 0;
 // P5.JS SETUP
 // ═══════════════════════════════════════════════════════════════════════
 
-window.preload = function() {
-    montserratFont = loadFont('https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.ttf');
+function preload() {
+    try {
+        montserratFont = loadFont('https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.ttf');
+    } catch (e) {
+        console.error('Font loading failed, using default font:', e);
+        montserratFont = 'sans-serif';
+    }
 }
 
-window.setup = function() {
+function setup() {
     let canvas = createCanvas(1200, 675); // 16:9 cinematic ratio
     canvas.parent('canvas-container');
     
@@ -41,6 +46,7 @@ window.setup = function() {
     initializeSystem();
     
     document.querySelector('.loading').style.display = 'none';
+    updateSeedDisplay();
 }
 
 function initializeSystem() {
@@ -93,7 +99,7 @@ function generateTextData() {
     }
 }
 
-window.draw = function() {
+function draw() {
     background(0);
     time += params.waveSpeed;
 
@@ -148,35 +154,36 @@ class MagneticParticle {
             let px = this.x;
             let py = this.y;
             let col = pg.get(px, py);
+            if (!col) return;
             let isInText = col[0] > 128;
 
             if (!isInText) {
                 // Apply elliptical magnetic attraction
                 let dx = closest.x - this.x;
                 let dy = closest.y - this.y;
-                let dist = sqrt(dx * dx + dy * dy);
+                let distance = sqrt(dx * dx + dy * dy);
                 
-                if (dist > 0) {
+                if (distance > 0) {
                     // Elliptical field with sine perturbation
                     let angle = atan2(dy, dx);
                     let ellipticalFactor = 1 + 0.3 * sin(angle * 3 + time);
                     
-                    let forceMag = params.magneticStrength / (dist * 0.01) * ellipticalFactor;
+                    let forceMag = params.magneticStrength / (distance * 0.01) * ellipticalFactor;
                     forceMag = constrain(forceMag, 0, 2);
                     
-                    this.vx += (dx / dist) * forceMag;
-                    this.vy += (dy / dist) * forceMag;
+                    this.vx += (dx / distance) * forceMag;
+                    this.vy += (dy / distance) * forceMag;
                 }
             } else {
                 // Repel from text area
                 let dx = this.x - closest.x;
                 let dy = this.y - closest.y;
-                let dist = sqrt(dx * dx + dy * dy);
+                let distance = sqrt(dx * dx + dy * dy);
                 
-                if (dist > 0) {
+                if (distance > 0) {
                     let forceMag = 0.5;
-                    this.vx += (dx / dist) * forceMag;
-                    this.vy += (dy / dist) * forceMag;
+                    this.vx += (dx / distance) * forceMag;
+                    this.vy += (dy / distance) * forceMag;
                 }
             }
         }
@@ -219,13 +226,21 @@ class TextParticle {
     constructor() {
         // Place on text area
         let placed = false;
-        while (!placed) {
+        let attempts = 0;
+        while (!placed && attempts < 1000) {
             this.homeX = random(width);
             this.homeY = random(height);
             let col = pg.get(this.homeX, this.homeY);
-            if (col[0] > 128) {
+            if (col && col[0] > 128) {
                 placed = true;
             }
+            attempts++;
+        }
+        
+        // Fallback if couldn't place
+        if (!placed) {
+            this.homeX = width / 2;
+            this.homeY = height / 2;
         }
         this.x = this.homeX;
         this.y = this.homeY;
@@ -316,7 +331,3 @@ window.resetParameters = function() {
 window.saveImage = function() {
     saveCanvas('andrew-intro', 'png');
 }
-
-window.addEventListener('load', function() {
-    updateSeedDisplay();
-});

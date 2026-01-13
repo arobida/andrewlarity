@@ -1,8 +1,13 @@
-import index from "./index.html";
+const indexHtml = Bun.file("./index.html");
 
 Bun.serve({
-  routes: {
-    "/": index,
+  fetch(req) {
+    if (req.url === "/" || new URL(req.url).pathname === "/") {
+      return new Response(indexHtml, {
+        headers: { "Content-Type": "text/html" }
+      });
+    }
+    return new Response("Not Found", { status: 404 });
   },
   development: {
     hmr: true,
